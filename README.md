@@ -25,6 +25,8 @@ scripts/
   setup_cron.sh
   apply_postfix_config.sh
   post_deploy_report.sh
+  switch-temp-mail-domain.sh
+  run-remote-switch-temp-mail-domain.sh
 deploy/
   systemd/temp-mail.service
   cron/cleanup-old-mail.cron
@@ -125,7 +127,21 @@ TEMP_MAIL_ADMIN_PASSWORD=change-me /opt/temp-mail/venv/bin/uvicorn app.api:app -
 
 现在这些问题都已经被整理进项目结构和脚本里了。
 
+## 域名切换
+
+如果你已经在生产上跑通这套服务，后续需要切换邮箱后缀，可以使用：
+
+- `scripts/switch-temp-mail-domain.sh`：服务端迁移脚本
+- `scripts/run-remote-switch-temp-mail-domain.sh`：开发机编排脚本
+
+相关文档：
+
+- [docs/temp-mail-domain-switch-operations.md](docs/temp-mail-domain-switch-operations.md)
+- [docs/temp-mail-id-discovery.md](docs/temp-mail-id-discovery.md)
+
 ## 文档
 
 - DNS 配置说明见 [docs/dns-setup.md](docs/dns-setup.md)
 - 详细部署说明见 [docs/ubuntu-deployment.md](docs/ubuntu-deployment.md)
+- 域名切换说明见 [docs/temp-mail-domain-switch-operations.md](docs/temp-mail-domain-switch-operations.md)
+- ID 查询说明见 [docs/temp-mail-id-discovery.md](docs/temp-mail-id-discovery.md)
