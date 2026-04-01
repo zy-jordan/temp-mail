@@ -1,0 +1,1 @@
+tempmail: "|/opt/temp-mail/venv/bin/python /opt/temp-mail/app/mail_ingest.py"

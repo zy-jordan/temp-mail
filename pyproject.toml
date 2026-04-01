@@ -1,0 +1,17 @@
+[project]
+name = "temp-mail"
+version = "0.1.0"
+description = "Self-hosted temp mail service for codex-console"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi>=0.115,<1.0",
+  "uvicorn>=0.30,<1.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["app"]

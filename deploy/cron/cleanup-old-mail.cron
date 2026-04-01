@@ -1,0 +1,1 @@
+0 * * * * root /opt/temp-mail/scripts/cleanup_old_mail.sh >/dev/null 2>&1
