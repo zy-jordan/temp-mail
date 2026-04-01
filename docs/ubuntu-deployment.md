@@ -19,6 +19,10 @@ cp .env.example .env
 
 ## 2. 修改 `.env`
 
+完整变量说明见：
+
+- [配置文件说明](./config-reference.md)
+
 至少改这些：
 
 ```env

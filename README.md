@@ -124,12 +124,11 @@ TEMP_MAIL_ADMIN_PASSWORD=change-me /opt/temp-mail/venv/bin/uvicorn app.api:app -
 
 ## 配置
 
-参考 [`.env.example`](.env.example)。最关键的变量有：
+参考 [`.env.example`](.env.example)。
 
-- `TEMP_MAIL_ADMIN_PASSWORD`
-- `TEMP_MAIL_DB_PATH`
-- `TEMP_MAIL_RETENTION_HOURS`
-- `TEMP_MAIL_DOMAIN`
+如果你想知道每个变量分别是干什么的，并区分“部署邮箱服务本身”与“切换邮箱后缀”两类配置，请看：
+
+- [docs/config-reference.md](docs/config-reference.md)
 
 ## 代码审查结论
 
@@ -156,6 +155,7 @@ TEMP_MAIL_ADMIN_PASSWORD=change-me /opt/temp-mail/venv/bin/uvicorn app.api:app -
 
 ## 文档
 
+- 配置文件说明见 [docs/config-reference.md](docs/config-reference.md)
 - DNS 配置说明见 [docs/dns-setup.md](docs/dns-setup.md)
 - 详细部署说明见 [docs/ubuntu-deployment.md](docs/ubuntu-deployment.md)
 - 域名切换说明见 [docs/temp-mail-domain-switch-operations.md](docs/temp-mail-domain-switch-operations.md)
