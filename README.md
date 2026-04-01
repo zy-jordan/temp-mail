@@ -69,7 +69,22 @@ cd /opt/temp-mail
 cp .env.example .env
 ```
 
-### 2. 新手一键部署
+### 2. 新手阅读顺序
+
+如果你是第一次搭这套服务，建议按这个顺序看：
+
+1. 先看 [docs/dns-setup.md](docs/dns-setup.md)
+   作用：把 `TEMP_MAIL_DOMAIN` 对应的 `A` / `MX` 记录配正确。
+2. 再看 [docs/quickstart.md](docs/quickstart.md)
+   作用：按最短路径执行一键部署。
+3. 如果部署中途报错，再看 [docs/troubleshooting.md](docs/troubleshooting.md)
+   作用：按症状查 DNS、端口、Postfix、API、SQLite。
+4. 如果你已经上线，后续需要切换邮箱后缀，再看 [docs/temp-mail-domain-switch-operations.md](docs/temp-mail-domain-switch-operations.md)
+   作用：切换生产域名后缀。
+5. 如果切换域名前需要查 Cloudflare record id 或 `codex-console` service id，再看 [docs/temp-mail-id-discovery.md](docs/temp-mail-id-discovery.md)
+   作用：查固定 ID。
+
+### 3. 新手一键部署
 
 ```bash
 sudo /opt/temp-mail/scripts/deploy.sh
@@ -85,7 +100,7 @@ sudo /opt/temp-mail/scripts/deploy.sh
 - 执行端到端自测
 - 打印部署后自检报告
 
-### 3. 分步部署
+### 4. 分步部署
 
 如果你不想一键执行，也可以按下面顺序单独跑：
 
