@@ -119,7 +119,7 @@ sudo /opt/temp-mail/scripts/setup_cron.sh
 ```bash
 python3 -m venv /opt/temp-mail/venv
 /opt/temp-mail/venv/bin/pip install -e .
-TEMP_MAIL_ADMIN_PASSWORD=change-me /opt/temp-mail/venv/bin/uvicorn app.api:app --host 0.0.0.0 --port 8000
+TEMP_MAIL_ADMIN_PASSWORD=your-strong-password /opt/temp-mail/venv/bin/uvicorn app.api:app --host 0.0.0.0 --port 8000
 ```
 
 ## 配置

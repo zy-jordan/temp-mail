@@ -77,8 +77,12 @@ TEMP_MAIL_DB_PATH=/opt/temp-mail/data/temp_mail.db
 
 默认值：
 
+- 无默认值，必须显式配置
+
+示例：
+
 ```env
-TEMP_MAIL_ADMIN_PASSWORD=change-me
+TEMP_MAIL_ADMIN_PASSWORD=your-strong-password
 ```
 
 作用：
