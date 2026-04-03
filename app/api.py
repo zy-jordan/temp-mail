@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException, Query
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from app.config import settings
 from app.db import get_conn, init_db
+
+_STATIC_DIR = Path(__file__).parent / "static"
 
 app = FastAPI(title="temp-mail")
 
@@ -28,9 +33,14 @@ def startup() -> None:
     init_db()
 
 
+@app.get("/")
+def root():
+    return FileResponse(_STATIC_DIR / "index.html")
+
+
 @app.get("/health")
 def health():
-    return {"ok": True, "db_path": str(settings.db_path)}
+    return {"ok": True, "db_path": str(settings.db_path), "domain": settings.domain}
 
 
 @app.post("/admin/new_address")
@@ -71,6 +81,34 @@ def new_address(
         "address": row["address"],
         "address_id": row["id"],
         "id": row["id"],
+    }
+
+
+@app.get("/admin/addresses")
+def list_addresses(
+    x_admin_auth: str | None = Header(default=None),
+):
+    check_admin(x_admin_auth)
+
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT id, address, local_part, domain, created_at FROM addresses ORDER BY created_at DESC"
+        ).fetchall()
+    finally:
+        conn.close()
+
+    return {
+        "results": [
+            {
+                "id": r["id"],
+                "address": r["address"],
+                "localPart": r["local_part"],
+                "domain": r["domain"],
+                "createdAt": r["created_at"],
+            }
+            for r in rows
+        ]
     }
 
 
@@ -162,3 +200,6 @@ def get_mail(
         "raw": row["raw"],
         "createdAt": row["created_at"],
     }
+
+
+app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
