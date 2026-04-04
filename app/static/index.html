@@ -36,7 +36,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .detail-meta h2 { font-size: 16px; margin-bottom: 8px; }
 .detail-meta .meta-row { font-size: 13px; color: #666; margin-bottom: 4px; }
 .detail-body { flex: 1; overflow: auto; }
-.detail-body iframe { width: 100%; height: 100%; border: none; }
+.detail-body iframe { width: 100%; border: none; min-height: 300px; }
 .detail-body pre { padding: 20px; white-space: pre-wrap; word-wrap: break-word; font-size: 14px; line-height: 1.6; }
 .detail-toggle { padding: 8px 20px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
 .detail-toggle button { background: none; border: 1px solid #ddd; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 4px; }
@@ -251,6 +251,12 @@ async function selectMail(id) {
   } catch (_) {}
 }
 
+function resizeIframe(iframe) {
+  try {
+    iframe.style.height = iframe.contentDocument.documentElement.scrollHeight + 'px';
+  } catch (_) {}
+}
+
 // --- Detail ---
 function renderDetail(m) {
   currentMail = m;
@@ -267,7 +273,7 @@ function renderDetail(m) {
 
   var bodyHtml;
   if (hasHtml) {
-    bodyHtml = '<div class="detail-body"><iframe sandbox="allow-same-origin" srcdoc="' + esc(m.html, true) + '"></iframe></div>';
+    bodyHtml = '<div class="detail-body"><iframe sandbox="allow-same-origin" srcdoc="' + esc(m.html, true) + '" onload="resizeIframe(this)"></iframe></div>';
   } else if (hasText) {
     bodyHtml = '<div class="detail-body"><pre>' + esc(m.text) + '</pre></div>';
   } else {
@@ -292,7 +298,7 @@ function showBody(type, btn) {
   btn.classList.add('active');
   var body = document.querySelector('.detail-body');
   if (type === 'html') {
-    body.innerHTML = '<iframe sandbox="allow-same-origin" srcdoc="' + esc(currentMail.html, true) + '"></iframe>';
+    body.innerHTML = '<iframe sandbox="allow-same-origin" srcdoc="' + esc(currentMail.html, true) + '" onload="resizeIframe(this)"></iframe>';
   } else {
     body.innerHTML = '<pre>' + esc(currentMail.text) + '</pre>';
   }
