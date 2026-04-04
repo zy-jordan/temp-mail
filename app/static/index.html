@@ -1,2 +1,364 @@
 <!DOCTYPE html>
-<html><body><h1>Temp Mail Admin</h1></body></html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Temp Mail Admin</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; height: 100vh; display: flex; flex-direction: column; }
+
+/* Header */
+.header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #fff; border-bottom: 1px solid #e0e0e0; flex-shrink: 0; }
+.header h1 { font-size: 18px; font-weight: 600; }
+.header button { background: #1a73e8; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.header button:hover { background: #1557b0; }
+
+/* Main layout */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* Columns */
+.col-addresses { width: 25%; border-right: 1px solid #e0e0e0; background: #fff; overflow-y: auto; }
+.col-mails { width: 30%; border-right: 1px solid #e0e0e0; background: #fff; overflow-y: auto; }
+.col-detail { width: 45%; background: #fff; display: flex; flex-direction: column; overflow: hidden; }
+
+.col-header { padding: 12px 16px; font-size: 13px; color: #888; border-bottom: 1px solid #f0f0f0; font-weight: 500; flex-shrink: 0; }
+
+/* List items */
+.list-item { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer; border-left: 3px solid transparent; }
+.list-item:hover { background: #f8f9fa; }
+.list-item.active { background: #e8f0fe; border-left-color: #1a73e8; }
+.list-item .primary { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-item .secondary { font-size: 12px; color: #888; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Mail detail */
+.detail-meta { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
+.detail-meta h2 { font-size: 16px; margin-bottom: 8px; }
+.detail-meta .meta-row { font-size: 13px; color: #666; margin-bottom: 4px; }
+.detail-body { flex: 1; overflow: auto; }
+.detail-body iframe { width: 100%; height: 100%; border: none; }
+.detail-body pre { padding: 20px; white-space: pre-wrap; word-wrap: break-word; font-size: 14px; line-height: 1.6; }
+.detail-toggle { padding: 8px 20px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
+.detail-toggle button { background: none; border: 1px solid #ddd; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 4px; }
+.detail-toggle button.active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+
+/* Empty states */
+.empty { display: flex; align-items: center; justify-content: center; height: 100%; color: #aaa; font-size: 14px; }
+
+/* Modal */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal { background: #fff; border-radius: 12px; padding: 24px; width: 360px; max-width: 90vw; }
+.modal h2 { font-size: 18px; margin-bottom: 16px; }
+.modal label { font-size: 13px; color: #666; display: block; margin-bottom: 4px; }
+.modal input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 12px; }
+.modal input:focus { outline: none; border-color: #1a73e8; }
+.modal .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.modal button { padding: 8px 20px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+.modal .btn-primary { background: #1a73e8; color: #fff; border: none; }
+.modal .btn-primary:hover { background: #1557b0; }
+.modal .btn-secondary { background: #fff; color: #333; border: 1px solid #ddd; }
+.modal .error { color: #d93025; font-size: 13px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<!-- Login Modal -->
+<div id="loginModal" class="modal-overlay">
+  <div class="modal">
+    <h2>Temp Mail Admin</h2>
+    <div id="loginError" class="error" style="display:none"></div>
+    <label>Admin Password</label>
+    <input type="password" id="loginPassword" placeholder="输入管理密码" autofocus>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="doLogin()">登录</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Address Modal -->
+<div id="createModal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <h2>创建新邮箱</h2>
+    <div id="createError" class="error" style="display:none"></div>
+    <label>本地部分</label>
+    <input type="text" id="createLocal" placeholder="例如 test">
+    <label>域名</label>
+    <input type="text" id="createDomain" placeholder="example.com">
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeCreate()">取消</button>
+      <button class="btn-primary" onclick="doCreate()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <h1>Temp Mail Admin</h1>
+  <button onclick="openCreate()">+ 新邮箱</button>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="col-addresses">
+    <div class="col-header">邮箱列表</div>
+    <div id="addressList"></div>
+  </div>
+  <div class="col-mails">
+    <div class="col-header" id="mailsHeader">邮件列表</div>
+    <div id="mailList"></div>
+  </div>
+  <div class="col-detail">
+    <div id="detailContent"><div class="empty">选择一封邮件查看详情</div></div>
+  </div>
+</div>
+
+<script>
+let AUTH = sessionStorage.getItem('adminAuth') || '';
+let DOMAIN = '';
+let selectedAddress = null;
+let selectedMailId = null;
+let pollTimer = null;
+
+// --- API helper ---
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { 'x-admin-auth': AUTH, 'Content-Type': 'application/json', ...(opts.headers || {}) },
+  });
+  if (res.status === 401) {
+    sessionStorage.removeItem('adminAuth');
+    AUTH = '';
+    showLogin();
+    throw new Error('unauthorized');
+  }
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// --- Auth ---
+function showLogin() {
+  document.getElementById('loginModal').style.display = 'flex';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  setTimeout(function() { document.getElementById('loginPassword').focus(); }, 50);
+}
+
+async function doLogin() {
+  var pw = document.getElementById('loginPassword').value.trim();
+  if (!pw) return;
+  AUTH = pw;
+  try {
+    await api('/health');
+    sessionStorage.setItem('adminAuth', pw);
+    document.getElementById('loginModal').style.display = 'none';
+    init();
+  } catch (e) {
+    document.getElementById('loginError').textContent = '密码错误';
+    document.getElementById('loginError').style.display = 'block';
+    AUTH = '';
+  }
+}
+
+document.getElementById('loginPassword').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+
+// --- Init ---
+async function init() {
+  try {
+    var h = await api('/health');
+    DOMAIN = h.domain || '';
+  } catch (_) {}
+  loadAddresses();
+}
+
+// --- Addresses ---
+async function loadAddresses() {
+  try {
+    var data = await api('/admin/addresses');
+    var list = document.getElementById('addressList');
+    if (!data.results.length) {
+      list.innerHTML = '<div class="empty" style="padding:40px 0">暂无邮箱</div>';
+      return;
+    }
+    list.innerHTML = data.results.map(function(a) {
+      var cls = selectedAddress === a.address ? ' active' : '';
+      return '<div class="list-item' + cls + '" data-addr="' + esc(a.address, true) + '">'
+        + '<div class="primary">' + esc(a.address) + '</div>'
+        + '<div class="secondary">' + timeAgo(a.createdAt) + '</div>'
+        + '</div>';
+    }).join('');
+    list.querySelectorAll('.list-item').forEach(function(el) {
+      el.addEventListener('click', function() { selectAddress(el.dataset.addr); });
+    });
+  } catch (_) {}
+}
+
+function selectAddress(addr) {
+  selectedAddress = addr;
+  selectedMailId = null;
+  loadAddresses();
+  loadMails();
+  document.getElementById('detailContent').innerHTML = '<div class="empty">选择一封邮件查看详情</div>';
+  document.getElementById('mailsHeader').textContent = addr;
+  startPoll();
+}
+
+// --- Mails ---
+async function loadMails() {
+  if (!selectedAddress) return;
+  try {
+    var data = await api('/admin/mails?address=' + encodeURIComponent(selectedAddress) + '&limit=50');
+    var list = document.getElementById('mailList');
+    if (!data.results.length) {
+      list.innerHTML = '<div class="empty" style="padding:40px 0">暂无邮件</div>';
+      return;
+    }
+    list.innerHTML = data.results.map(function(m) {
+      var cls = selectedMailId === m.id ? ' active' : '';
+      return '<div class="list-item' + cls + '" data-id="' + esc(m.id, true) + '">'
+        + '<div class="primary">' + esc(m.subject || '(无主题)') + '</div>'
+        + '<div class="secondary">' + esc(m.source || '未知发件人') + ' &middot; ' + timeAgo(m.createdAt) + '</div>'
+        + '</div>';
+    }).join('');
+    list.querySelectorAll('.list-item').forEach(function(el) {
+      el.addEventListener('click', function() { selectMail(el.dataset.id); });
+    });
+  } catch (_) {}
+}
+
+function startPoll() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(loadMails, 5000);
+}
+
+async function selectMail(id) {
+  selectedMailId = id;
+  loadMails();
+  try {
+    var m = await api('/admin/mails/' + id);
+    renderDetail(m);
+  } catch (_) {}
+}
+
+// --- Detail ---
+function renderDetail(m) {
+  var hasHtml = m.html && m.html.trim();
+  var hasText = m.text && m.text.trim();
+
+  var toggleHtml = '';
+  if (hasHtml && hasText) {
+    toggleHtml = '<div class="detail-toggle">'
+      + '<button class="active" data-mode="html">HTML</button>'
+      + '<button data-mode="text">纯文本</button>'
+      + '</div>';
+  }
+
+  var bodyHtml;
+  if (hasHtml) {
+    bodyHtml = '<div class="detail-body"><iframe sandbox="allow-same-origin" srcdoc="' + esc(m.html, true) + '"></iframe></div>';
+  } else if (hasText) {
+    bodyHtml = '<div class="detail-body"><pre>' + esc(m.text) + '</pre></div>';
+  } else {
+    bodyHtml = '<div class="detail-body"><div class="empty">无正文内容</div></div>';
+  }
+
+  document.getElementById('detailContent').innerHTML =
+    '<div class="detail-meta">'
+    + '<h2>' + esc(m.subject || '(无主题)') + '</h2>'
+    + '<div class="meta-row">发件人: ' + esc(m.source || '未知') + '</div>'
+    + '<div class="meta-row">收件人: ' + esc(m.address) + '</div>'
+    + '<div class="meta-row">时间: ' + new Date(m.createdAt).toLocaleString() + '</div>'
+    + '</div>'
+    + toggleHtml
+    + bodyHtml;
+
+  // store for toggle
+  window._currentMail = m;
+
+  // bind toggle buttons
+  var toggle = document.querySelector('.detail-toggle');
+  if (toggle) {
+    toggle.querySelectorAll('button').forEach(function(btn) {
+      btn.addEventListener('click', function() { showBody(btn.dataset.mode, btn); });
+    });
+  }
+}
+
+function showBody(type, btn) {
+  var m = window._currentMail;
+  if (!m) return;
+  var toggle = btn.parentElement;
+  toggle.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  var body = document.querySelector('.detail-body');
+  if (type === 'html') {
+    body.innerHTML = '<iframe sandbox="allow-same-origin" srcdoc="' + esc(m.html, true) + '"></iframe>';
+  } else {
+    body.innerHTML = '<pre>' + esc(m.text) + '</pre>';
+  }
+}
+
+// --- Create ---
+function openCreate() {
+  document.getElementById('createModal').style.display = 'flex';
+  document.getElementById('createLocal').value = '';
+  document.getElementById('createDomain').value = DOMAIN;
+  document.getElementById('createError').style.display = 'none';
+  setTimeout(function() { document.getElementById('createLocal').focus(); }, 50);
+}
+
+function closeCreate() {
+  document.getElementById('createModal').style.display = 'none';
+}
+
+async function doCreate() {
+  var local = document.getElementById('createLocal').value.trim();
+  var domain = document.getElementById('createDomain').value.trim();
+  if (!local || !domain) {
+    document.getElementById('createError').textContent = '请填写完整';
+    document.getElementById('createError').style.display = 'block';
+    return;
+  }
+  try {
+    var res = await api('/admin/new_address', {
+      method: 'POST',
+      body: JSON.stringify({ enablePrefix: false, name: local, domain: domain }),
+    });
+    closeCreate();
+    await loadAddresses();
+    selectAddress(res.address);
+  } catch (e) {
+    document.getElementById('createError').textContent = '创建失败: ' + e.message;
+    document.getElementById('createError').style.display = 'block';
+  }
+}
+
+document.getElementById('createLocal').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doCreate();
+});
+
+// --- Helpers ---
+function esc(s, forAttr) {
+  if (!s) return '';
+  s = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  if (forAttr) s = s.replace(/"/g, '&quot;');
+  return s;
+}
+
+function timeAgo(iso) {
+  var diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return '刚刚';
+  if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
+  return Math.floor(diff / 86400) + ' 天前';
+}
+
+// --- Boot ---
+if (AUTH) {
+  document.getElementById('loginModal').style.display = 'none';
+  init();
+}
+</script>
+</body>
+</html>
