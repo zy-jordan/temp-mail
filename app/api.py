@@ -126,27 +126,14 @@ def list_mails(
 
     conn = get_conn()
     try:
+        sql = "SELECT id, address, source, subject, created_at FROM mails"
+        params: list = []
         if address:
-            rows = conn.execute(
-                """
-                SELECT id, address, source, subject, text, html, raw, created_at
-                FROM mails
-                WHERE address = ?
-                ORDER BY created_at DESC
-                LIMIT ? OFFSET ?
-                """,
-                (address.lower(), limit, offset),
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                """
-                SELECT id, address, source, subject, text, html, raw, created_at
-                FROM mails
-                ORDER BY created_at DESC
-                LIMIT ? OFFSET ?
-                """,
-                (limit, offset),
-            ).fetchall()
+            sql += " WHERE address = ?"
+            params.append(address.lower())
+        sql += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        params += [limit, offset]
+        rows = conn.execute(sql, params).fetchall()
     finally:
         conn.close()
 
@@ -157,9 +144,6 @@ def list_mails(
                 "address": r["address"],
                 "source": r["source"],
                 "subject": r["subject"],
-                "text": r["text"],
-                "html": r["html"],
-                "raw": r["raw"],
                 "createdAt": r["created_at"],
             }
             for r in rows

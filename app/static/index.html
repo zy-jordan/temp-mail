@@ -117,11 +117,13 @@ let AUTH = sessionStorage.getItem('adminAuth') || '';
 let DOMAIN = '';
 let selectedAddress = null;
 let selectedMailId = null;
+let currentMail = null;
 let pollTimer = null;
+let lastMailIds = '';
 
 // --- API helper ---
 async function api(path, opts = {}) {
-  const res = await fetch(path, {
+  var res = await fetch(path, {
     ...opts,
     headers: { 'x-admin-auth': AUTH, 'Content-Type': 'application/json', ...(opts.headers || {}) },
   });
@@ -148,10 +150,11 @@ async function doLogin() {
   if (!pw) return;
   AUTH = pw;
   try {
-    await api('/health');
+    var h = await api('/health');
+    DOMAIN = h.domain || '';
     sessionStorage.setItem('adminAuth', pw);
     document.getElementById('loginModal').style.display = 'none';
-    init();
+    loadAddresses();
   } catch (e) {
     document.getElementById('loginError').textContent = '密码错误';
     document.getElementById('loginError').style.display = 'block';
@@ -188,19 +191,25 @@ async function loadAddresses() {
         + '<div class="secondary">' + timeAgo(a.createdAt) + '</div>'
         + '</div>';
     }).join('');
-    list.querySelectorAll('.list-item').forEach(function(el) {
-      el.addEventListener('click', function() { selectAddress(el.dataset.addr); });
-    });
   } catch (_) {}
+}
+
+function highlightItem(container, dataAttr, value) {
+  container.querySelectorAll('.list-item').forEach(function(el) {
+    el.classList.toggle('active', el.dataset[dataAttr] === value);
+  });
 }
 
 function selectAddress(addr) {
   selectedAddress = addr;
   selectedMailId = null;
-  loadAddresses();
-  loadMails();
+  lastMailIds = '';
+  highlightItem(document.getElementById('addressList'), 'addr', addr);
+  document.getElementById('mailList').innerHTML = '';
   document.getElementById('detailContent').innerHTML = '<div class="empty">选择一封邮件查看详情</div>';
   document.getElementById('mailsHeader').textContent = addr;
+  currentMail = null;
+  loadMails();
   startPoll();
 }
 
@@ -209,6 +218,10 @@ async function loadMails() {
   if (!selectedAddress) return;
   try {
     var data = await api('/admin/mails?address=' + encodeURIComponent(selectedAddress) + '&limit=50');
+    var newIds = data.results.map(function(m) { return m.id; }).join(',');
+    if (newIds === lastMailIds) return;
+    lastMailIds = newIds;
+
     var list = document.getElementById('mailList');
     if (!data.results.length) {
       list.innerHTML = '<div class="empty" style="padding:40px 0">暂无邮件</div>';
@@ -221,9 +234,6 @@ async function loadMails() {
         + '<div class="secondary">' + esc(m.source || '未知发件人') + ' &middot; ' + timeAgo(m.createdAt) + '</div>'
         + '</div>';
     }).join('');
-    list.querySelectorAll('.list-item').forEach(function(el) {
-      el.addEventListener('click', function() { selectMail(el.dataset.id); });
-    });
   } catch (_) {}
 }
 
@@ -234,7 +244,7 @@ function startPoll() {
 
 async function selectMail(id) {
   selectedMailId = id;
-  loadMails();
+  highlightItem(document.getElementById('mailList'), 'id', id);
   try {
     var m = await api('/admin/mails/' + id);
     renderDetail(m);
@@ -243,6 +253,7 @@ async function selectMail(id) {
 
 // --- Detail ---
 function renderDetail(m) {
+  currentMail = m;
   var hasHtml = m.html && m.html.trim();
   var hasText = m.text && m.text.trim();
 
@@ -272,30 +283,18 @@ function renderDetail(m) {
     + '</div>'
     + toggleHtml
     + bodyHtml;
-
-  // store for toggle
-  window._currentMail = m;
-
-  // bind toggle buttons
-  var toggle = document.querySelector('.detail-toggle');
-  if (toggle) {
-    toggle.querySelectorAll('button').forEach(function(btn) {
-      btn.addEventListener('click', function() { showBody(btn.dataset.mode, btn); });
-    });
-  }
 }
 
 function showBody(type, btn) {
-  var m = window._currentMail;
-  if (!m) return;
+  if (!currentMail) return;
   var toggle = btn.parentElement;
   toggle.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
   var body = document.querySelector('.detail-body');
   if (type === 'html') {
-    body.innerHTML = '<iframe sandbox="allow-same-origin" srcdoc="' + esc(m.html, true) + '"></iframe>';
+    body.innerHTML = '<iframe sandbox="allow-same-origin" srcdoc="' + esc(currentMail.html, true) + '"></iframe>';
   } else {
-    body.innerHTML = '<pre>' + esc(m.text) + '</pre>';
+    body.innerHTML = '<pre>' + esc(currentMail.text) + '</pre>';
   }
 }
 
@@ -353,6 +352,32 @@ function timeAgo(iso) {
   if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
   return Math.floor(diff / 86400) + ' 天前';
 }
+
+// --- Event delegation ---
+document.getElementById('addressList').addEventListener('click', function(e) {
+  var item = e.target.closest('.list-item');
+  if (item) selectAddress(item.dataset.addr);
+});
+
+document.getElementById('mailList').addEventListener('click', function(e) {
+  var item = e.target.closest('.list-item');
+  if (item) selectMail(item.dataset.id);
+});
+
+document.getElementById('detailContent').addEventListener('click', function(e) {
+  var btn = e.target.closest('.detail-toggle button');
+  if (btn) showBody(btn.dataset.mode, btn);
+});
+
+// --- Pause polling when tab hidden ---
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  } else if (selectedAddress) {
+    loadMails();
+    startPoll();
+  }
+});
 
 // --- Boot ---
 if (AUTH) {
