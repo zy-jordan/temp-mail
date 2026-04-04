@@ -8,3 +8,6 @@ data/
 *.db
 *.db-shm
 *.db-wal
+*.egg-info/
+.superpowers/
+uv.lock
