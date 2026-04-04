@@ -6,6 +6,7 @@ if [[ "$(id -u)" -ne 0 ]]; then
   exit 1
 fi
 
-install -D -m 0644 /opt/temp-mail/deploy/cron/cleanup-old-mail.cron /etc/cron.d/temp-mail-cleanup
+INSTALL_ROOT="${TEMP_MAIL_ROOT:-/opt/temp-mail}"
+install -D -m 0644 "${INSTALL_ROOT}/deploy/cron/cleanup-old-mail.cron" /etc/cron.d/temp-mail-cleanup
 chmod 0644 /etc/cron.d/temp-mail-cleanup
 cat /etc/cron.d/temp-mail-cleanup

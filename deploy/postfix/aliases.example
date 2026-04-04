@@ -1,1 +1,1 @@
-tempmail: "|/opt/temp-mail/venv/bin/python /opt/temp-mail/app/mail_ingest.py"
+tempmail: "|/bin/bash -c 'set -a; source /opt/temp-mail/.env; set +a; /opt/temp-mail/venv/bin/python /opt/temp-mail/app/mail_ingest.py'"
